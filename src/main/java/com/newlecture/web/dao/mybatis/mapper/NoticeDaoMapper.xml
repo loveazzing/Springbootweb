@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.newlecture.web.dao.NoticeDao">
+	<resultMap type="com.newlecture.web.entity.NoticeView" id="noticeViewMap">
+		<result property="memberId" column="member_id"/>
+		<result property="memberName" column="member_name"/>
+	</resultMap>
+	<select id="getViewList" resultMap="noticeViewMap">
+		select * from noticeview 
+			<trim prefix="where" prefixOverrides="AND | OR">
+			<!-- <where> where를 쓰던지 위처럼 Trim으로 사용가능 아래 if 조건이 비활성화되어 첫 문장에 AND 나 OR가 오면 WHERE로 대치한다는 뜻 -->
+			<if test="query != null and query != ''">
+				${field} like '%${query}%'
+			</if>
+				and pub = #{pub}
+			<!-- </where>  -->
+			</trim>
+			order by regdate desc
+			limit #{offset}, #{size}
+	</select>
+	<select id="getCount" resultType="int">
+		SELECT count(id) as count FROM notice 
+			<where> <!-- where를 쓰던지 위처럼 Trim으로 사용가능 아래 if 조건이 비활성화되어 첫 문장에 AND 나 OR가 오면 WHERE로 대치한다는 뜻 -->
+			<if test="query != null and query != ''">
+				${field} like '%${query}%'
+			</if>
+				and pub = #{pub}
+			</where>
+	</select>
+	<select id="getView" resultType="com.newlecture.web.entity.NoticeView">
+		select * from noticeview 
+		where id = #{id}
+	</select> 
+	<select id="getNext" resultType="com.newlecture.web.entity.Notice">
+		select * from notice where regdate &gt; (select regdate from notice where id = #{id}) 
+		limit 1
+	</select>
+	<select id="getPrev" resultType="com.newlecture.web.entity.Notice">
+		select * from notice where regdate &lt; (select regdate from notice where id = #{id})
+		order by regdate desc
+		limit 1
+	</select>
+	<update id="update" parameterType="com.newlecture.web.entity.Notice">
+		update notice
+		set
+			title = #{title},
+			content = #{content},
+			hit = #{hit},
+			pub = #{pub}
+		where 
+			id = #{id}	
+	</update>
+	<insert id="insert" parameterType="com.newlecture.web.entity.Notice">
+		insert into(title, content, memberId)
+		values(#{title}, #{content}, #{memberId})
+	</insert>
+	<delete id="delete">
+		delete from notice where id = #{id}
+	</delete>
+	<delete id="deleteAll">
+		delete from notice
+		where id in
+		<foreach item="id" index="index" collection="ids" 
+			open="(" separator="," close=")">
+        #{id}
+  		</foreach>
+	</delete>
+	<update id="updataPubAll">
+		update notice
+		set
+			pub = #{pub}
+		where id in
+		<foreach item="id" index="index" collection="ids" 
+			open="(" separator="," close=")">
+        #{id}
+  		</foreach>
+	
+		<!-- update notice
+		set
+			pub = case id
+				<foreach item="id" collection="pubIds">
+					when #{id} then 1
+				</foreach>
+				<foreach item="id" collection="closeIds">
+					when #{id} then 0
+				</foreach>
+		where id in (
+		<foreach item="id" collection="pubIds">
+			#{id}
+		</foreach>
+		,
+		<foreach item="id" collection="closeIds">
+			#{id}
+		</foreach>
+		) -->
+	</update>
+</mapper>
